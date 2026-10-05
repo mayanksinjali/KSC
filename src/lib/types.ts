@@ -99,7 +99,6 @@ export interface SiteSettings {
   club_name: string;
   tagline_en: string;
   tagline_ne: string;
-  home_highlights: string;
   hero_heading: string;
   hero_text: string;
   mission_title: string;

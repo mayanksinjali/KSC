@@ -27,8 +27,6 @@ export const seedSettings: SettingsMap = {
   club_name: "Kanti Science Club",
   tagline_en: "A shared effort to bring everyone closer to science.",
   tagline_ne: "विज्ञानमा सबैलाई जोड्ने एक प्रयास!",
-  home_highlights:
-    "Exhibitions, quizzes & research days\nCoding, AI & hands-on workshops\nOpen to every student, all grades",
   hero_heading: "Where curiosity becomes a habit.",
   hero_text:
     "Kanti Science Club is the science and technology community at Kanti Secondary School, Butwal — a place to ask questions, build things and share what we learn.",

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, FlaskConical, Sparkles } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { HeroOrbit } from "@/components/site/HeroOrbit";
 import { Reveal, RevealGroup } from "@/components/site/Reveal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -20,11 +20,6 @@ export default async function HomePage() {
 
   // Flagship programmes come straight from the database — never filler cards.
   const programmes = recentEvents.slice(0, 3);
-  const highlights = settings.home_highlights
-    .split(/\r?\n/)
-    .map((text) => text.trim())
-    .filter(Boolean)
-    .slice(0, 3);
 
   return (
     <>
@@ -32,11 +27,8 @@ export default async function HomePage() {
       <section className="relative isolate overflow-hidden bg-[#0b1526] text-[#f7f3ea]">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[#0b1526]/20"
+          className="pointer-events-none absolute inset-0 z-0 bg-[#0b1526]/20"
         />
-        <div className="relative aspect-[742/455] lg:absolute lg:inset-0 lg:aspect-auto">
-          <HeroOrbit />
-        </div>
         <div className="container-page relative z-10 grid items-center gap-8 pb-12 pt-4 sm:gap-10 sm:pb-16 lg:min-h-[min(820px,calc(100svh-5rem))] lg:grid-cols-[1.1fr_.9fr] lg:py-20">
           <div className="lg:col-start-2 lg:pl-24">
             <Reveal>
@@ -81,21 +73,9 @@ export default async function HomePage() {
             </Reveal>
           </div>
 
-          {highlights.length > 0 && (
-            <Reveal delay={0.4} className="relative z-10 lg:col-span-2">
-              <ul className="grid gap-4 border-t border-white/20 pt-6 sm:grid-cols-3 sm:pt-8">
-                {highlights.map((text, index) => {
-                  const Icon = [FlaskConical, Sparkles, ArrowUpRight][index];
-                  return (
-                    <li key={text} className="flex items-start gap-2.5 text-sm text-white/75">
-                      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-amber" aria-hidden="true" />
-                      {text}
-                    </li>
-                  );
-                })}
-              </ul>
-            </Reveal>
-          )}
+        </div>
+        <div className="relative z-0 mt-3 aspect-[1.9/1] max-h-[28rem] lg:absolute lg:inset-0 lg:mt-0 lg:aspect-auto lg:max-h-none">
+          <HeroOrbit />
         </div>
       </section>
 

@@ -31,7 +31,6 @@ const GROUPS: { title: string; description: string; fields: Field[] }[] = [
     title: "Home page",
     description: "The hero section and mission preview on the home page.",
     fields: [
-      { key: "home_highlights", label: "Hero highlights (one per line)", type: "textarea", full: true },
       { key: "hero_heading", label: "Hero heading", full: true },
       { key: "hero_text", label: "Hero text", type: "textarea", full: true },
       { key: "mission_title", label: "Mission title", full: true },
