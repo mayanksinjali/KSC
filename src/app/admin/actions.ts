@@ -9,6 +9,7 @@ import {
   applicationStatusSchema,
   eventSchema,
   gallerySchema,
+  journeyMilestoneSchema,
   memberSchema,
   noticeSchema,
   settingsSchema,
@@ -134,6 +135,46 @@ export async function deleteEvent(id: string): Promise<ActionResult> {
     const { error } = await supabase.from("events").delete().eq("id", id);
     if (error) return fail(error.message);
     revalidateAll(["/admin/events", "/events", "/journey", "/"]);
+    return { ok: true, data: undefined };
+  });
+}
+
+/* -------------------------- journey milestones -------------------------- */
+
+export async function saveJourneyMilestone(
+  id: string | null,
+  input: unknown,
+): Promise<ActionResult> {
+  return guarded(async () => {
+    await requireAdmin();
+    if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
+    const parsed = journeyMilestoneSchema.safeParse(input);
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? "Invalid journey milestone");
+    }
+
+    const supabase = await createClient();
+    if (!supabase) return fail("Database unavailable");
+    const { error } = id
+      ? await supabase.from("journey_milestones").update(parsed.data).eq("id", id)
+      : await supabase.from("journey_milestones").insert(parsed.data);
+    if (error) return fail(error.message);
+
+    revalidateAll(["/admin/journey", "/journey"]);
+    return { ok: true, data: undefined };
+  });
+}
+
+export async function deleteJourneyMilestone(id: string): Promise<ActionResult> {
+  return guarded(async () => {
+    await requireAdmin();
+    if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
+    const supabase = await createClient();
+    if (!supabase) return fail("Database unavailable");
+    const { error } = await supabase.from("journey_milestones").delete().eq("id", id);
+    if (error) return fail(error.message);
+
+    revalidateAll(["/admin/journey", "/journey"]);
     return { ok: true, data: undefined };
   });
 }
@@ -279,7 +320,7 @@ export async function saveSettings(input: unknown): Promise<ActionResult> {
 
 export async function saveAdminUser(id: string | null, input: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await requireSuperAdmin();
+    const actor = await requireSuperAdmin();
     if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
     const parsed = adminUserSchema.safeParse(input);
     if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Invalid admin data");
@@ -295,6 +336,23 @@ export async function saveAdminUser(id: string | null, input: unknown): Promise<
       if (error) return fail(error.message);
       revalidateAll(["/admin/admin-users"]);
       return { ok: true, data: undefined };
+    }
+
+    if (id === actor.id) return fail("You cannot change your own admin role.");
+    const { data: target, error: targetError } = await supabase
+      .from("admin_users")
+      .select("role")
+      .eq("id", id)
+      .maybeSingle();
+    if (targetError) return fail(targetError.message);
+    if (!target) return fail("Admin account not found.");
+    if (target.role === "super_admin" && parsed.data.role === "editor") {
+      const { count, error: countError } = await supabase
+        .from("admin_users")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "super_admin");
+      if (countError) return fail(countError.message);
+      if ((count ?? 0) <= 1) return fail("The last Super Admin cannot be demoted.");
     }
 
     const { error } = await supabase
@@ -314,6 +372,21 @@ export async function removeAdminUser(id: string): Promise<ActionResult> {
     if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
     const supabase = await createClient();
     if (!supabase) return fail("Database unavailable");
+    const { data: target, error: targetError } = await supabase
+      .from("admin_users")
+      .select("role")
+      .eq("id", id)
+      .maybeSingle();
+    if (targetError) return fail(targetError.message);
+    if (!target) return fail("Admin account not found.");
+    if (target.role === "super_admin") {
+      const { count, error: countError } = await supabase
+        .from("admin_users")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "super_admin");
+      if (countError) return fail(countError.message);
+      if ((count ?? 0) <= 1) return fail("The last Super Admin cannot be removed.");
+    }
     const { error } = await supabase.from("admin_users").delete().eq("id", id);
     if (error) return fail(error.message);
     revalidateAll(["/admin/admin-users"]);

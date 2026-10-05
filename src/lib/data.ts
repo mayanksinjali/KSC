@@ -17,6 +17,7 @@ import type {
   EventRecord,
   EventStatus,
   GalleryImage,
+  JourneyMilestone,
   Member,
   MemberType,
   Notice,
@@ -130,6 +131,21 @@ export const getEvent = cache(async (id: string): Promise<EventRecord | null> =>
     return null;
   }
   return (data as EventRecord) ?? null;
+});
+
+export const listJourneyMilestones = cache(async (): Promise<JourneyMilestone[]> => {
+  const supabase = await db();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("journey_milestones")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.error("listJourneyMilestones", error.message);
+    return [];
+  }
+  return (data ?? []) as JourneyMilestone[];
 });
 
 /** Nearest future upcoming event, or null when there is none. */

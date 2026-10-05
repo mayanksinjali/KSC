@@ -19,6 +19,8 @@ export function AdminUsersManager({
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<AdminRole>("editor");
   const [saving, setSaving] = useState(false);
+  const [roleTarget, setRoleTarget] = useState<{ admin: AdminUser; role: AdminRole } | null>(null);
+  const [changingRole, setChangingRole] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -35,14 +37,25 @@ export function AdminUsersManager({
     setEmail("");
   }
 
-  async function changeRole(admin: AdminUser, nextRole: AdminRole) {
-    const result = await saveAdminUser(admin.id, { email: admin.email, role: nextRole });
+  async function confirmRoleChange() {
+    if (!roleTarget) return;
+    setChangingRole(true);
+    const result = await saveAdminUser(roleTarget.admin.id, {
+      email: roleTarget.admin.email,
+      role: roleTarget.role,
+    });
+    setChangingRole(false);
     if (!result.ok) {
       push(result.error, "error");
       return;
     }
-    setRows((prev) => prev.map((a) => (a.id === admin.id ? { ...a, role: nextRole } : a)));
+    setRows((prev) =>
+      prev.map((admin) =>
+        admin.id === roleTarget.admin.id ? { ...admin, role: roleTarget.role } : admin,
+      ),
+    );
     push("Role updated.", "success");
+    setRoleTarget(null);
   }
 
   async function confirmRemove() {
@@ -119,23 +132,28 @@ export function AdminUsersManager({
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <label className="sr-only" htmlFor={`role-${admin.id}`}>
-                  Role for {admin.email}
-                </label>
-                <select
-                  id={`role-${admin.id}`}
-                  className="field w-auto py-1.5 text-sm"
-                  value={admin.role}
-                  onChange={(e) => changeRole(admin, e.target.value as AdminRole)}
-                >
-                  <option value="editor">Editor</option>
-                  <option value="super_admin">Super Admin</option>
-                </select>
+                <span className="text-sm text-muted">
+                  {admin.role === "super_admin" ? "Super Admin" : "Editor"}
+                </span>
                 <button
                   type="button"
+                  disabled={admin.id === currentId}
+                  onClick={() =>
+                    setRoleTarget({
+                      admin,
+                      role: admin.role === "super_admin" ? "editor" : "super_admin",
+                    })
+                  }
+                  className="btn-ghost px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Change role
+                </button>
+                <button
+                  type="button"
+                  disabled={admin.id === currentId}
                   onClick={() => setDeleteTarget(admin)}
                   aria-label={`Remove ${admin.email}`}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-danger/10 hover:text-danger"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -144,6 +162,27 @@ export function AdminUsersManager({
           ))}
         </ul>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(roleTarget)}
+        title="Confirm admin role change"
+        description={
+          roleTarget
+            ? `Change ${roleTarget.admin.email} from ${
+                roleTarget.admin.role === "super_admin" ? "Super Admin" : "Editor"
+              } to ${roleTarget.role === "super_admin" ? "Super Admin" : "Editor"}? ${
+                roleTarget.role === "super_admin"
+                  ? "This grants full control over site settings and admin accounts."
+                  : "This removes access to site settings and admin account management."
+              }`
+            : ""
+        }
+        confirmLabel="Confirm role change"
+        destructive={roleTarget?.role === "editor"}
+        pending={changingRole}
+        onConfirm={confirmRoleChange}
+        onCancel={() => setRoleTarget(null)}
+      />
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

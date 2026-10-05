@@ -83,6 +83,13 @@ export const eventSchema = z.object({
   result: z.string().trim().max(2000).optional().or(z.literal("")),
 });
 
+export const journeyMilestoneSchema = z.object({
+  title: z.string().trim().min(3, "Title is required").max(140),
+  year_label: z.string().trim().min(2, "Add a year or date label").max(80),
+  description: z.string().trim().min(10, "Description is required").max(4000),
+  sort_order: z.coerce.number().int().min(0).max(100000),
+});
+
 export const noticeSchema = z.object({
   title: z.string().trim().min(3, "Title is required").max(140),
   body: z.string().trim().min(10, "Body is required").max(8000),

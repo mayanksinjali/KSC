@@ -46,6 +46,7 @@ In the Supabase SQL editor, run the two migrations in order:
 3. `supabase/migrations/0003_event_date_validation.sql` — complete BS event-date validation
 4. `supabase/migrations/0004_admin_user_read_scope.sql` — restrict editor access to admin accounts
 5. `supabase/migrations/0005_api_grants.sql` — grant the least-privilege Data API permissions used by the app
+6. `supabase/migrations/0006_journey_milestones.sql` — enable admin-managed historical Journey milestones
 
 For a production project, keep **Automatically expose new tables** disabled. This migration grants the
 existing app tables the required API permissions explicitly; RLS still restricts access.
@@ -165,7 +166,7 @@ src/
 │   ├── (site)/            Public pages: home, about, events, journey, gallery, team, notices, join
 │   ├── admin/
 │   │   ├── login/          Supabase Auth sign-in
-│   │   └── (panel)/        Authenticated CMS: dashboard, members, events, notices, gallery,
+│   │   └── (panel)/        Authenticated CMS: dashboard, members, events, journey, notices, gallery,
 │   │                       applications, settings, admin-users
 │   ├── api/                Public application form + admin-only CSV export
 │   ├── sitemap.ts, robots.ts

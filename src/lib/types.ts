@@ -48,6 +48,15 @@ export interface EventRecord {
   created_at: string;
 }
 
+export interface JourneyMilestone {
+  id: string;
+  title: string;
+  year_label: string;
+  description: string;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface Notice {
   id: string;
   title: string;
