@@ -24,7 +24,7 @@ export default async function HomePage() {
   return (
     <>
       {/* ------------------------------- Hero ------------------------------- */}
-      <section className="relative overflow-hidden">
+      <section className="relative w-full overflow-hidden">
         <HeroOrbit />
         <div className="container-page relative pb-16 pt-20 sm:pb-24 sm:pt-28 lg:pb-28 lg:pt-32">
           <Reveal>
@@ -71,17 +71,19 @@ export default async function HomePage() {
       </section>
 
       {/* ----------------------------- Next event --------------------------- */}
-      <section className="container-page pb-20 sm:pb-24" aria-labelledby="next-event-heading">
-        <h2 id="next-event-heading" className="sr-only">
-          Next event
-        </h2>
-        <Reveal>
-          <NextEventBanner event={nextEvent} />
-        </Reveal>
+      <section className="w-full pb-20 sm:pb-24" aria-labelledby="next-event-heading">
+        <div className="container-page">
+          <h2 id="next-event-heading" className="sr-only">
+            Next event
+          </h2>
+          <Reveal>
+            <NextEventBanner event={nextEvent} />
+          </Reveal>
+        </div>
       </section>
 
       {/* ------------------------------ Mission ----------------------------- */}
-      <section className="border-y border-line bg-paper-2/50" aria-labelledby="mission-heading">
+      <section className="w-full border-y border-line bg-paper-2/50" aria-labelledby="mission-heading">
         <div className="container-page grid gap-12 py-20 lg:grid-cols-[1fr_1.1fr] lg:gap-16 lg:py-24">
           <Reveal>
             <SectionHeader
@@ -108,67 +110,73 @@ export default async function HomePage() {
 
       {/* --------------------------- Programmes ----------------------------- */}
       {programmes.length > 0 && (
-        <section className="container-page py-20 sm:py-24" aria-labelledby="programmes-heading">
-          <Reveal>
-            <SectionHeader
-              eyebrow="Flagship programmes"
-              index="02"
-              title="What we actually run"
-              description="A selection of the exhibitions, quizzes, talks and build events organised by our members."
-              action={
-                <Link href="/events" className="btn-ghost">
-                  All events
-                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              }
-            />
-          </Reveal>
-          <RevealGroup className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {programmes.map((event, i) => (
-              <Reveal key={event.id} as="div" delay={i * 0.06} className="h-full">
-                <EventCard event={event} />
-              </Reveal>
-            ))}
-          </RevealGroup>
+        <section className="w-full py-20 sm:py-24" aria-labelledby="programmes-heading">
+          <div className="container-page">
+            <Reveal>
+              <SectionHeader
+                eyebrow="Flagship programmes"
+                index="02"
+                title="What we actually run"
+                description="A selection of the exhibitions, quizzes, talks and build events organised by our members."
+                action={
+                  <Link href="/events" className="btn-ghost">
+                    All events
+                    <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                }
+              />
+            </Reveal>
+            <RevealGroup className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {programmes.map((event, i) => (
+                <Reveal key={event.id} as="div" delay={i * 0.06} className="h-full">
+                  <EventCard event={event} />
+                </Reveal>
+              ))}
+            </RevealGroup>
+          </div>
         </section>
       )}
 
       {/* ------------------------------- Stats ------------------------------ */}
       {stats.activeMembers + stats.eventsHeld + stats.yearsRunning > 0 && (
-        <section className="container-page pb-20 sm:pb-24" aria-labelledby="stats-heading">
-          <h2 id="stats-heading" className="sr-only">
-            Club at a glance
-          </h2>
-          <Reveal>
-            <Stats stats={stats} />
-          </Reveal>
+        <section className="w-full pb-20 sm:pb-24" aria-labelledby="stats-heading">
+          <div className="container-page">
+            <h2 id="stats-heading" className="sr-only">
+              Club at a glance
+            </h2>
+            <Reveal>
+              <Stats stats={stats} />
+            </Reveal>
+          </div>
         </section>
       )}
 
       {/* ------------------------------- CTA -------------------------------- */}
-      <section className="container-page pb-24">
-        <Reveal>
-          <div className="relative overflow-hidden rounded-card border border-line bg-gradient-to-br from-teal/[0.08] via-surface to-amber/[0.08] px-6 py-14 text-center sm:px-12 sm:py-16">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -left-16 top-0 h-56 w-56 rounded-full bg-teal/10 blur-3xl"
-            />
-            <p className="eyebrow justify-center">Be part of what comes next</p>
-            <h2 className="mx-auto mt-4 max-w-2xl text-balance text-3xl leading-tight sm:text-4xl">
-              Bring your curiosity. We&apos;ll bring the experiments.
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-pretty leading-relaxed text-muted">
-              Membership is open to every student at Kanti Secondary School. Tell us a little about
-              what you want to explore and we&apos;ll get you into a team.
-            </p>
-            <div className="mt-8 flex justify-center">
-              <Link href="/join" className="btn-primary px-6 py-3 text-base">
-                Join KSC
-                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
+      <section className="w-full pb-24">
+        <div className="container-page">
+          <Reveal>
+            <div className="relative overflow-hidden rounded-card border border-line bg-gradient-to-br from-teal/[0.08] via-surface to-amber/[0.08] px-6 py-14 text-center sm:px-12 sm:py-16">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -left-16 top-0 h-56 w-56 rounded-full bg-teal/10 blur-3xl"
+              />
+              <p className="eyebrow justify-center">Be part of what comes next</p>
+              <h2 className="mx-auto mt-4 max-w-2xl text-balance text-3xl leading-tight sm:text-4xl">
+                Bring your curiosity. We&apos;ll bring the experiments.
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-pretty leading-relaxed text-muted">
+                Membership is open to every student at Kanti Secondary School. Tell us a little about
+                what you want to explore and we&apos;ll get you into a team.
+              </p>
+              <div className="mt-8 flex justify-center">
+                <Link href="/join" className="btn-primary px-6 py-3 text-base">
+                  Join KSC
+                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
             </div>
-          </div>
-        </Reveal>
+          </Reveal>
+        </div>
       </section>
     </>
   );

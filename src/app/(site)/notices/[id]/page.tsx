@@ -39,7 +39,8 @@ export default async function NoticeDetailPage({ params }: { params: Promise<{ i
   if (!notice) notFound();
 
   return (
-    <article className="container-page max-w-prose py-14 sm:py-20">
+    <section className="w-full py-14 sm:py-20">
+      <article className="container-page max-w-prose">
       <Link
         href="/notices"
         className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-teal"
@@ -92,6 +93,7 @@ export default async function NoticeDetailPage({ params }: { params: Promise<{ i
       <p className="mt-14 border-t border-line pt-6 text-sm text-faint">
         Posted by {settings.club_name} · {settings.meeting_location}
       </p>
-    </article>
+      </article>
+    </section>
   );
 }

@@ -33,8 +33,10 @@ export default async function GalleryPage() {
         title="Gallery"
         description="Photographs from our exhibitions, quizzes, talks and build events — published by the club committee."
       />
-      <section className="container-page py-14 sm:py-16">
-        <GalleryGrid images={images} categories={categories} events={eventOptions} />
+      <section className="w-full py-14 sm:py-16">
+        <div className="container-page">
+          <GalleryGrid images={images} categories={categories} events={eventOptions} />
+        </div>
       </section>
     </>
   );

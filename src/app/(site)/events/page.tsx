@@ -26,8 +26,10 @@ export default async function EventsPage() {
         title="Events"
         description="Everything the club runs — exhibitions, quizzes, talks, inspire sessions, coding events and art competitions. Filter by status or category to find what you're looking for."
       />
-      <section className="container-page py-14 sm:py-16">
-        <EventsExplorer events={events} />
+      <section className="w-full py-14 sm:py-16">
+        <div className="container-page">
+          <EventsExplorer events={events} />
+        </div>
       </section>
     </>
   );

@@ -12,7 +12,7 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="relative overflow-hidden border-b border-line bg-paper-2/60">
+    <header className="relative w-full overflow-hidden border-b border-line bg-paper-2/60">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-teal/[0.06] blur-3xl"

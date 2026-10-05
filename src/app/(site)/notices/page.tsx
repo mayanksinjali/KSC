@@ -31,31 +31,33 @@ export default async function NoticesPage() {
         description="Registrations, results, meeting times and programme updates — newest first, with pinned notices at the top."
       />
 
-      <section className="container-page py-14 sm:py-16">
-        {notices.length === 0 ? (
-          <EmptyState
-            icon={BellOff}
-            title="No notices have been posted yet."
-            description="Club announcements will appear here as soon as the committee publishes them."
-          />
-        ) : (
-          <div className="space-y-6">
-            {latest && (
-              <Reveal>
-                <NoticeCard notice={latest} featured />
-              </Reveal>
-            )}
-            {rest.length > 0 && (
-              <div className="grid gap-6 sm:grid-cols-2">
-                {rest.map((notice, i) => (
-                  <Reveal key={notice.id} delay={i * 0.04}>
-                    <NoticeCard notice={notice} />
+      <section className="w-full py-14 sm:py-16">
+        <div className="container-page">
+          {notices.length === 0 ? (
+              <EmptyState
+                icon={BellOff}
+                title="No notices have been posted yet."
+                description="Club announcements will appear here as soon as the committee publishes them."
+              />
+          ) : (
+              <div className="space-y-6">
+                {latest && (
+                  <Reveal>
+                    <NoticeCard notice={latest} featured />
                   </Reveal>
-                ))}
+                )}
+                {rest.length > 0 && (
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    {rest.map((notice, i) => (
+                      <Reveal key={notice.id} delay={i * 0.04}>
+                        <NoticeCard notice={notice} />
+                      </Reveal>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </section>
     </>
   );

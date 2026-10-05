@@ -34,39 +34,42 @@ export default async function JourneyPage() {
       />
 
       {milestones.length > 0 && (
-        <section className="container-page pt-14 sm:pt-16" aria-labelledby="journey-story-heading">
-          <h2 id="journey-story-heading" className="font-display text-2xl sm:text-3xl">
-            Our story from the beginning
-          </h2>
-          <ol className="relative mt-8 space-y-8 border-l border-line pl-6 sm:pl-10">
-            {milestones.map((milestone, index) => (
-              <Reveal as="li" key={milestone.id} delay={index * 0.04} className="relative">
-                <span
-                  className="absolute -left-[1.9rem] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-paper bg-amber sm:-left-[3.15rem]"
-                  aria-hidden="true"
-                />
-                <p className="font-display text-lg text-teal">{milestone.year_label}</p>
-                <article className="card-surface mt-3 p-6">
-                  <h3 className="font-display text-xl leading-snug">{milestone.title}</h3>
-                  <p className="mt-3 whitespace-pre-line text-pretty text-sm leading-relaxed text-muted">
-                    {milestone.description}
-                  </p>
-                </article>
-              </Reveal>
-            ))}
-          </ol>
+        <section className="w-full pt-14 sm:pt-16" aria-labelledby="journey-story-heading">
+          <div className="container-page">
+            <h2 id="journey-story-heading" className="font-display text-2xl sm:text-3xl">
+              Our story from the beginning
+            </h2>
+            <ol className="relative mt-8 space-y-8 border-l border-line pl-6 sm:pl-10">
+              {milestones.map((milestone, index) => (
+                <Reveal as="li" key={milestone.id} delay={index * 0.04} className="relative">
+                  <span
+                    className="absolute -left-[1.9rem] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-paper bg-amber sm:-left-[3.15rem]"
+                    aria-hidden="true"
+                  />
+                  <p className="font-display text-lg text-teal">{milestone.year_label}</p>
+                  <article className="card-surface mt-3 p-6">
+                    <h3 className="font-display text-xl leading-snug">{milestone.title}</h3>
+                    <p className="mt-3 whitespace-pre-line text-pretty text-sm leading-relaxed text-muted">
+                      {milestone.description}
+                    </p>
+                  </article>
+                </Reveal>
+              ))}
+            </ol>
+          </div>
         </section>
       )}
 
-      <section className="container-page py-16 sm:py-20">
-        {events.length === 0 && milestones.length === 0 ? (
+      <section className="w-full py-16 sm:py-20">
+        <div className="container-page">
+          {events.length === 0 && milestones.length === 0 ? (
           <EmptyState
             icon={Milestone}
             title="The club’s story is ready to begin."
             description="The club president can add its founding story and milestones from Admin → Journey. Completed events will also appear here."
           />
-        ) : events.length > 0 ? (
-          <>
+          ) : events.length > 0 ? (
+            <>
             <h2 className="mb-8 font-display text-2xl sm:text-3xl">Completed programmes</h2>
             <ol className="relative space-y-10 border-l border-line pl-6 sm:pl-10">
               {events.map((event, index) => (
@@ -133,8 +136,9 @@ export default async function JourneyPage() {
                 </Reveal>
               ))}
             </ol>
-          </>
-        ) : null}
+            </>
+          ) : null}
+        </div>
       </section>
     </>
   );

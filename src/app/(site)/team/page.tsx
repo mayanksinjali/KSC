@@ -65,36 +65,38 @@ export default async function TeamPage() {
         description="Meet the students and teachers who contribute to KSC, with roles and details maintained by the club."
       />
 
-      <section className="container-page py-16 sm:py-20" aria-label="Student committee">
-        <Reveal>
-          <SectionHeader
-            eyebrow="Current members"
-            index="01"
-            title="Student Committee"
-            description="Current student committee members and their roles, maintained by the club."
-          />
-        </Reveal>
-
-        <div className="mt-10">
-          {students.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title="Student committee information will be published soon."
-              description="The current committee is being finalised for this session."
+      <section className="w-full py-16 sm:py-20" aria-label="Student committee">
+        <div className="container-page">
+          <Reveal>
+            <SectionHeader
+              eyebrow="Current members"
+              index="01"
+              title="Student Committee"
+              description="Current student committee members and their roles, maintained by the club."
             />
-          ) : (
-            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-              {students.map((member, i) => (
-                <Reveal key={member.id} delay={i * 0.04}>
-                  <MemberCard member={member} />
-                </Reveal>
-              ))}
-            </div>
-          )}
+          </Reveal>
+
+          <div className="mt-10">
+            {students.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="Student committee information will be published soon."
+                description="The current committee is being finalised for this session."
+              />
+            ) : (
+              <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+                {students.map((member, i) => (
+                  <Reveal key={member.id} delay={i * 0.04}>
+                    <MemberCard member={member} />
+                  </Reveal>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
-      <section className="border-t border-line bg-paper-2/50" aria-label="Advisors and teachers">
+      <section className="w-full border-t border-line bg-paper-2/50" aria-label="Advisors and teachers">
         <div className="container-page py-16 sm:py-20">
           <Reveal>
             <SectionHeader

@@ -74,11 +74,15 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <div className="border-b border-line bg-paper-2/50">
-        <div className="container-page py-8">            <Link href="/events" className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-teal">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              All events
-            </Link>
+      <div className="w-full border-b border-line bg-paper-2/50">
+        <div className="container-page py-8">
+          <Link
+            href="/events"
+            className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-teal"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            All events
+          </Link>
         </div>
       </div>
 
@@ -201,7 +205,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       </article>
 
       {related.length > 0 && (
-        <section className="border-t border-line bg-paper-2/50">
+        <section className="w-full border-t border-line bg-paper-2/50">
           <div className="container-page py-16">
             <Reveal>
               <SectionHeader eyebrow="Keep exploring" title="Related events" />
