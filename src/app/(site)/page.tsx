@@ -27,8 +27,11 @@ export default async function HomePage() {
       <section className="relative isolate overflow-hidden bg-[#0b1526] text-[#f7f3ea]">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 bg-[#0b1526]/20"
+          className="pointer-events-none absolute inset-0 bg-[#0b1526]/20"
         />
+        <div className="relative aspect-[742/455] lg:absolute lg:inset-0 lg:aspect-auto">
+          <HeroOrbit />
+        </div>
         <div className="container-page relative z-10 grid items-center gap-8 pb-12 pt-4 sm:gap-10 sm:pb-16 lg:min-h-[min(820px,calc(100svh-5rem))] lg:grid-cols-[1.1fr_.9fr] lg:py-20">
           <div className="lg:col-start-2 lg:pl-24">
             <Reveal>
@@ -73,9 +76,6 @@ export default async function HomePage() {
             </Reveal>
           </div>
 
-        </div>
-        <div className="relative z-0 mt-3 aspect-[1.9/1] max-h-[28rem] lg:absolute lg:inset-0 lg:mt-0 lg:aspect-auto lg:max-h-none">
-          <HeroOrbit />
         </div>
       </section>
 
