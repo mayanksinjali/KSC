@@ -45,6 +45,10 @@ In the Supabase SQL editor, run the two migrations in order:
 2. `supabase/migrations/0002_rls.sql` — Row Level Security policies **and** storage buckets
 3. `supabase/migrations/0003_event_date_validation.sql` — complete BS event-date validation
 4. `supabase/migrations/0004_admin_user_read_scope.sql` — restrict editor access to admin accounts
+5. `supabase/migrations/0005_api_grants.sql` — grant the least-privilege Data API permissions used by the app
+
+For a production project, keep **Automatically expose new tables** disabled. This migration grants the
+existing app tables the required API permissions explicitly; RLS still restricts access.
 
 Or, with the Supabase CLI:
 
