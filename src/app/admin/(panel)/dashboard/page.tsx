@@ -12,42 +12,24 @@ import {
 } from "lucide-react";
 import { PageTitle } from "@/components/admin/PageTitle";
 import { getAdminContext } from "@/lib/auth";
-import {
-  listApplications,
-  listEvents,
-  listGallery,
-  listMembers,
-  listNotices,
-} from "@/lib/data";
+import { getAdminDashboardData } from "@/lib/data";
 import { formatBsAd, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const admin = await getAdminContext();
-  const [members, events, notices, gallery, applications] = await Promise.all([
-    listMembers(),
-    listEvents(),
-    listNotices(),
-    listGallery(),
-    listApplications(),
-  ]);
-
-  const activeMembers = members.filter((m) => m.active).length;
-  const upcoming = events.filter((e) => e.status === "upcoming").length;
-  const pending = applications.filter((a) => a.status === "new").length;
+  const [admin, dashboard] = await Promise.all([getAdminContext(), getAdminDashboardData()]);
 
   const cards = [
-    { label: "Active members", value: activeMembers, href: "/admin/members", icon: Users },
-    { label: "Total events", value: events.length, href: "/admin/events", icon: CalendarDays },
-    { label: "Upcoming events", value: upcoming, href: "/admin/events", icon: CalendarDays },
-    { label: "Pending applications", value: pending, href: "/admin/applications", icon: BadgeCheck },
-    { label: "Published notices", value: notices.length, href: "/admin/notices", icon: FileText },
-    { label: "Gallery photos", value: gallery.length, href: "/admin/gallery", icon: Images },
+    { label: "Active members", value: dashboard.activeMembers, href: "/admin/members", icon: Users },
+    { label: "Total events", value: dashboard.totalEvents, href: "/admin/events", icon: CalendarDays },
+    { label: "Upcoming events", value: dashboard.upcomingEvents, href: "/admin/events", icon: CalendarDays },
+    { label: "Pending applications", value: dashboard.pendingApplications, href: "/admin/applications", icon: BadgeCheck },
+    { label: "Published notices", value: dashboard.publishedNotices, href: "/admin/notices", icon: FileText },
+    { label: "Gallery photos", value: dashboard.galleryPhotos, href: "/admin/gallery", icon: Images },
   ];
 
-  const recentApplications = applications.slice(0, 4);
-  const recentEvents = events.slice(0, 4);
+  const { recentApplications, recentEvents } = dashboard;
 
   return (
     <>

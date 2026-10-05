@@ -252,6 +252,96 @@ export const listApplications = cache(async (): Promise<Application[]> => {
   return (data ?? []) as Application[];
 });
 
+export interface AdminDashboardData {
+  activeMembers: number;
+  totalEvents: number;
+  upcomingEvents: number;
+  pendingApplications: number;
+  publishedNotices: number;
+  galleryPhotos: number;
+  recentApplications: Pick<Application, "id" | "name" | "class" | "status" | "created_at">[];
+  recentEvents: Pick<
+    EventRecord,
+    "id" | "title" | "date_bs" | "date_ad" | "category" | "status"
+  >[];
+}
+
+export const getAdminDashboardData = cache(async (): Promise<AdminDashboardData> => {
+  const supabase = await db();
+  if (!supabase) {
+    const events = [...seedEvents].sort((a, b) => (a.date_ad < b.date_ad ? 1 : -1));
+    const applications = [...seedApplications].sort((a, b) =>
+      a.created_at < b.created_at ? 1 : -1,
+    );
+    return {
+      activeMembers: seedMembers.filter((member) => member.active).length,
+      totalEvents: seedEvents.length,
+      upcomingEvents: seedEvents.filter((event) => event.status === "upcoming").length,
+      pendingApplications: seedApplications.filter((application) => application.status === "new")
+        .length,
+      publishedNotices: seedNotices.length,
+      galleryPhotos: seedGallery.length,
+      recentApplications: applications.slice(0, 4),
+      recentEvents: events.slice(0, 4),
+    };
+  }
+
+  const [
+    activeMembersRes,
+    totalEventsRes,
+    upcomingEventsRes,
+    pendingApplicationsRes,
+    noticesRes,
+    galleryRes,
+    recentApplicationsRes,
+    recentEventsRes,
+  ] = await Promise.all([
+    supabase.from("members").select("id", { count: "exact", head: true }).eq("active", true),
+    supabase.from("events").select("id", { count: "exact", head: true }),
+    supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "upcoming"),
+    supabase
+      .from("applications")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "new"),
+    supabase.from("notices").select("id", { count: "exact", head: true }),
+    supabase.from("gallery").select("id", { count: "exact", head: true }),
+    supabase
+      .from("applications")
+      .select("id,name,class,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(4),
+    supabase
+      .from("events")
+      .select("id,title,date_bs,date_ad,category,status")
+      .order("date_ad", { ascending: false })
+      .limit(4),
+  ]);
+
+  for (const [name, error] of [
+    ["active members", activeMembersRes.error],
+    ["total events", totalEventsRes.error],
+    ["upcoming events", upcomingEventsRes.error],
+    ["pending applications", pendingApplicationsRes.error],
+    ["notices", noticesRes.error],
+    ["gallery photos", galleryRes.error],
+    ["recent applications", recentApplicationsRes.error],
+    ["recent events", recentEventsRes.error],
+  ] as const) {
+    if (error) console.error(`getAdminDashboardData ${name}`, error.message);
+  }
+
+  return {
+    activeMembers: activeMembersRes.count ?? 0,
+    totalEvents: totalEventsRes.count ?? 0,
+    upcomingEvents: upcomingEventsRes.count ?? 0,
+    pendingApplications: pendingApplicationsRes.count ?? 0,
+    publishedNotices: noticesRes.count ?? 0,
+    galleryPhotos: galleryRes.count ?? 0,
+    recentApplications: (recentApplicationsRes.data ?? []) as AdminDashboardData["recentApplications"],
+    recentEvents: (recentEventsRes.data ?? []) as AdminDashboardData["recentEvents"],
+  };
+});
+
 /* ----------------------------- admin users ------------------------------ */
 
 export const listAdminUsers = cache(async (): Promise<AdminUser[]> => {
