@@ -24,58 +24,49 @@ export default async function HomePage() {
   return (
     <>
       {/* ------------------------------- Hero ------------------------------- */}
-      <section className="relative isolate overflow-hidden bg-[#0b1526] text-[#f7f3ea]">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[#0b1526]/20"
-        />
-        <div className="relative aspect-[742/455] lg:absolute lg:inset-0 lg:aspect-auto">
-          <HeroOrbit />
-        </div>
-        <div className="container-page relative z-10 grid items-center gap-8 pb-12 pt-4 sm:gap-10 sm:pb-16 lg:min-h-[min(820px,calc(100svh-5rem))] lg:grid-cols-[1.1fr_.9fr] lg:py-20">
-          <div className="lg:col-start-2 lg:pl-24">
-            <Reveal>
-              <p className="eyebrow !text-white/65">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber" aria-hidden="true" />
-                {settings.club_name} · Kanti Secondary School, Butwal
-              </p>
-            </Reveal>
+      <section className="relative overflow-hidden">
+        <HeroOrbit />
+        <div className="container-page relative pb-16 pt-20 sm:pb-24 sm:pt-28 lg:pb-28 lg:pt-32">
+          <Reveal>
+            <p className="eyebrow">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber" aria-hidden="true" />
+              {settings.club_name} · Kanti Secondary School, Butwal
+            </p>
+          </Reveal>
 
-            <Reveal delay={0.08}>
-              <h1 className="mt-6 max-w-[13ch] text-balance text-[2.8rem] leading-[1.02] sm:text-6xl lg:text-7xl">
-                {settings.hero_heading}
-              </h1>
-            </Reveal>
+          <Reveal delay={0.08}>
+            <h1 className="mt-6 max-w-4xl text-balance text-[2.6rem] leading-[1.03] sm:text-6xl lg:text-7xl">
+              {settings.hero_heading}
+            </h1>
+          </Reveal>
 
-            <Reveal delay={0.16}>
-              <p lang="ne" className="mt-6 max-w-xl text-lg leading-relaxed text-teal-soft sm:text-xl">
-                {settings.tagline_ne}
-              </p>
-            </Reveal>
+          <Reveal delay={0.16}>
+            <p
+              lang="ne"
+              className="mt-6 max-w-xl text-lg leading-relaxed text-teal sm:text-xl"
+            >
+              {settings.tagline_ne}
+            </p>
+          </Reveal>
 
-            <Reveal delay={0.22}>
-              <p className="mt-3 max-w-xl text-sm font-medium text-teal-soft">{settings.tagline_en}</p>
-              <p className="mt-4 max-w-xl text-pretty text-base leading-relaxed text-white/75 sm:text-lg">
-                {settings.hero_text}
-              </p>
-            </Reveal>
+          <Reveal delay={0.22}>
+            <p className="mt-4 max-w-xl text-sm font-medium text-teal">{settings.tagline_en}</p>
+            <p className="mt-4 max-w-2xl text-pretty text-lg leading-relaxed text-muted">
+              {settings.hero_text}
+            </p>
+          </Reveal>
 
-            <Reveal delay={0.3}>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link href="/join" className="btn-primary px-6 py-3 text-base">
-                  Join KSC
-                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-                <Link
-                  href="/events"
-                  className="btn-ghost !border-white/30 !text-white hover:!border-white/60 hover:!text-white px-6 py-3 text-base"
-                >
-                  Explore Events
-                </Link>
-              </div>
-            </Reveal>
-          </div>
-
+          <Reveal delay={0.3}>
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Link href="/join" className="btn-primary px-6 py-3 text-base">
+                Join KSC
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link href="/events" className="btn-ghost px-6 py-3 text-base">
+                Explore Events
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </section>
 
