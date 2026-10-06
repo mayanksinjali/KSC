@@ -511,6 +511,94 @@ export async function appointMemberAsAdmin(
   });
 }
 
+export async function changeAppointedMemberRole(
+  memberId: string,
+  role: AdminRole,
+): Promise<ActionResult<{ userId: string | null }>> {
+  return guarded(async () => {
+    const actor = await requireSuperAdmin();
+    if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
+    const parsed = adminRoleSchema.safeParse({ role });
+    if (!parsed.success) return fail("Choose a valid admin role.");
+    const supabase = await createClient();
+    if (!supabase) return fail("Database unavailable");
+
+    const { data: appointmentData, error: appointmentError } = await supabase
+      .rpc("list_appointable_members")
+      .eq("member_id", memberId)
+      .maybeSingle();
+    if (appointmentError) return fail(appointmentError.message);
+    const appointment =
+      appointmentData && typeof appointmentData === "object" && "user_id" in appointmentData
+        ? appointmentData
+        : null;
+    if (!appointment) return fail("Accepted member appointment not found.");
+    const userId = typeof appointment.user_id === "string" ? appointment.user_id : null;
+
+    if (userId) {
+      if (userId === actor.id) return fail("You cannot change your own admin role.");
+      const result = await saveAdminUser(userId, { role: parsed.data.role });
+      if (!result.ok) return result;
+      const { error } = await supabase
+        .from("applications")
+        .update({ appointed_role: null })
+        .eq("accepted_member_id", memberId);
+      if (error) return fail(`Role updated, but appointment cleanup failed: ${error.message}`);
+    } else {
+      const { data, error } = await supabase
+        .from("applications")
+        .update({ appointed_role: parsed.data.role })
+        .eq("accepted_member_id", memberId)
+        .select("id")
+        .maybeSingle();
+      if (error) return fail(error.message);
+      if (!data) return fail("Accepted member appointment not found.");
+    }
+
+    revalidateAll(["/admin/admin-users"]);
+    return { ok: true, data: { userId } };
+  });
+}
+
+export async function removeAppointedMemberAdmin(memberId: string): Promise<ActionResult> {
+  return guarded(async () => {
+    const actor = await requireSuperAdmin();
+    if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
+    const supabase = await createClient();
+    if (!supabase) return fail("Database unavailable");
+
+    const { data: appointmentData, error: appointmentError } = await supabase
+      .rpc("list_appointable_members")
+      .eq("member_id", memberId)
+      .maybeSingle();
+    if (appointmentError) return fail(appointmentError.message);
+    const appointment =
+      appointmentData && typeof appointmentData === "object" && "user_id" in appointmentData
+        ? appointmentData
+        : null;
+    if (!appointment) return fail("Accepted member appointment not found.");
+    const userId = typeof appointment.user_id === "string" ? appointment.user_id : null;
+
+    if (userId) {
+      if (userId === actor.id) return fail("You cannot remove your own admin access.");
+      const result = await removeAdminUser(userId);
+      if (!result.ok) return result;
+    } else {
+      const { data, error } = await supabase
+        .from("applications")
+        .update({ appointed_role: null })
+        .eq("accepted_member_id", memberId)
+        .select("id")
+        .maybeSingle();
+      if (error) return fail(error.message);
+      if (!data) return fail("Accepted member appointment not found.");
+    }
+
+    revalidateAll(["/admin/admin-users"]);
+    return { ok: true, data: undefined };
+  });
+}
+
 export async function completeAdminInvite(): Promise<ActionResult> {
   return guarded(async () => {
     const admin = await requireAdmin();

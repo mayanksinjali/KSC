@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, ShieldCheck, Trash2, UserRoundPlus } from "lucide-react";
+import { Pencil, Search, ShieldCheck, Trash2, UserRoundPlus } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/admin/Toast";
 import {
   appointMemberAsAdmin,
+  changeAppointedMemberRole,
+  removeAppointedMemberAdmin,
   removeAdminUser,
   saveAdminUser,
 } from "@/app/admin/actions";
@@ -29,6 +31,14 @@ export function AdminUsersManager({
   const [appointing, setAppointing] = useState(false);
   const [roleTarget, setRoleTarget] = useState<{ admin: AdminUser; role: AdminRole } | null>(null);
   const [changingRole, setChangingRole] = useState(false);
+  const [appointmentRoleTarget, setAppointmentRoleTarget] = useState<{
+    member: AppointableMember;
+    role: AdminRole;
+  } | null>(null);
+  const [changingAppointmentRole, setChangingAppointmentRole] = useState(false);
+  const [appointmentDeleteTarget, setAppointmentDeleteTarget] =
+    useState<AppointableMember | null>(null);
+  const [deletingAppointment, setDeletingAppointment] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -102,6 +112,61 @@ export function AdminUsersManager({
     );
     push("Role updated.", "success");
     setRoleTarget(null);
+  }
+
+  async function confirmAppointmentRoleChange() {
+    if (!appointmentRoleTarget) return;
+    setChangingAppointmentRole(true);
+    const result = await changeAppointedMemberRole(
+      appointmentRoleTarget.member.member_id,
+      appointmentRoleTarget.role,
+    );
+    setChangingAppointmentRole(false);
+    if (!result.ok) {
+      push(result.error, "error");
+      return;
+    }
+    setMembers((prev) =>
+      prev.map((member) =>
+        member.member_id === appointmentRoleTarget.member.member_id
+          ? { ...member, role: appointmentRoleTarget.role }
+          : member,
+      ),
+    );
+    if (result.data.userId) {
+      setRows((prev) =>
+        prev.map((admin) =>
+          admin.id === result.data.userId
+            ? { ...admin, role: appointmentRoleTarget.role }
+            : admin,
+        ),
+      );
+    }
+    push("Member admin role updated.", "success");
+    setAppointmentRoleTarget(null);
+  }
+
+  async function confirmAppointmentRemove() {
+    if (!appointmentDeleteTarget) return;
+    setDeletingAppointment(true);
+    const result = await removeAppointedMemberAdmin(appointmentDeleteTarget.member_id);
+    setDeletingAppointment(false);
+    if (!result.ok) {
+      push(result.error, "error");
+      return;
+    }
+    setMembers((prev) =>
+      prev.map((member) =>
+        member.member_id === appointmentDeleteTarget.member_id
+          ? { ...member, role: null, invitation_pending: false }
+          : member,
+      ),
+    );
+    if (appointmentDeleteTarget.user_id) {
+      setRows((prev) => prev.filter((admin) => admin.id !== appointmentDeleteTarget.user_id));
+    }
+    push("Admin appointment removed.", "success");
+    setAppointmentDeleteTarget(null);
   }
 
   async function confirmRemove() {
@@ -267,6 +332,31 @@ export function AdminUsersManager({
                         ? ""
                         : " · Appointment recorded"}
                   </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={member.user_id === currentId}
+                      onClick={() =>
+                        setAppointmentRoleTarget({
+                          member,
+                          role: member.role === "super_admin" ? "editor" : "super_admin",
+                        })
+                      }
+                      className="btn-ghost px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                      Change role
+                    </button>
+                    <button
+                      type="button"
+                      disabled={member.user_id === currentId}
+                      onClick={() => setAppointmentDeleteTarget(member)}
+                      aria-label={`Remove ${member.name}'s admin appointment`}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
                 </li>
               ))}
           </ul>
@@ -320,6 +410,43 @@ export function AdminUsersManager({
           ))}
         </ul>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(appointmentRoleTarget)}
+        title="Confirm member admin role change"
+        description={
+          appointmentRoleTarget
+            ? `Change ${appointmentRoleTarget.member.name} from ${
+                appointmentRoleTarget.member.role === "super_admin" ? "Super Admin" : "Editor"
+              } to ${
+                appointmentRoleTarget.role === "super_admin" ? "Super Admin" : "Editor"
+              }? ${
+                appointmentRoleTarget.role === "super_admin"
+                  ? "This grants full control over site settings and admin accounts."
+                  : "This removes access to site settings and admin account management."
+              }`
+            : ""
+        }
+        confirmLabel="Confirm role change"
+        destructive={appointmentRoleTarget?.role === "editor"}
+        pending={changingAppointmentRole}
+        onConfirm={confirmAppointmentRoleChange}
+        onCancel={() => setAppointmentRoleTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(appointmentDeleteTarget)}
+        title="Remove this member's admin access?"
+        description={
+          appointmentDeleteTarget
+            ? `Remove the ${appointmentDeleteTarget.role === "super_admin" ? "Super Admin" : "Editor"} appointment for ${appointmentDeleteTarget.name}? This won't remove them from the Members list.`
+            : ""
+        }
+        confirmLabel="Remove admin access"
+        pending={deletingAppointment}
+        onConfirm={confirmAppointmentRemove}
+        onCancel={() => setAppointmentDeleteTarget(null)}
+      />
 
       <ConfirmDialog
         open={Boolean(roleTarget)}
