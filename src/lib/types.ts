@@ -92,6 +92,7 @@ export interface AdminUser {
   id: string;
   email: string;
   role: AdminRole;
+  invitation_pending?: boolean;
 }
 
 export interface AppointableMember {
@@ -101,6 +102,7 @@ export interface AppointableMember {
   account: string;
   user_id: string | null;
   role: AdminRole | null;
+  invitation_pending: boolean;
 }
 
 export type SettingsMap = Record<string, string>;

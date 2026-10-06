@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getAdminContext, requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import {
   adminRoleSchema,
+  adminInviteEmailSchema,
   applicationStatusSchema,
   eventSchema,
   gallerySchema,
@@ -382,22 +384,157 @@ export async function saveAdminUser(id: string, input: unknown): Promise<ActionR
 export async function appointMemberAsAdmin(
   memberId: string,
   role: AdminRole,
-): Promise<ActionResult<{ pending: boolean }>> {
+): Promise<ActionResult<{ id: string; email: string; invitationPending: boolean }>> {
   return guarded(async () => {
-    await requireSuperAdmin();
+    const actor = await requireSuperAdmin();
     if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
     const supabase = await createClient();
     if (!supabase) return fail("Database unavailable");
-    const { data, error } = await supabase.rpc("appoint_member_as_admin", {
-      p_member_id: memberId,
-      p_role: role,
-    });
-    if (error) return fail(error.message);
-    if (typeof data !== "boolean") {
-      return fail("The appointment could not be verified. Refresh and try again.");
+    const parsedRole = adminRoleSchema.safeParse({ role });
+    if (!parsedRole.success) return fail("Choose a valid admin role.");
+
+    const { data: member, error: memberError } = await supabase
+      .from("members")
+      .select("id,active")
+      .eq("id", memberId)
+      .eq("active", true)
+      .maybeSingle();
+    if (memberError) return fail(memberError.message);
+    if (!member) return fail("Active member not found.");
+
+    const { data: application, error: applicationError } = await supabase
+      .from("applications")
+      .select("id,contact")
+      .eq("accepted_member_id", memberId)
+      .maybeSingle();
+    if (applicationError) return fail(applicationError.message);
+    if (!application) return fail("Only accepted applicants can be appointed.");
+
+    const parsedEmail = adminInviteEmailSchema.safeParse(application.contact);
+    if (!parsedEmail.success) {
+      return fail("This application has no valid email address. Ask them to update their application contact before inviting.");
     }
+    const email = parsedEmail.data.toLowerCase();
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (!siteUrl) return fail("Set NEXT_PUBLIC_SITE_URL to your deployed site URL before sending invitations.");
+    let redirectTo: string;
+    try {
+      redirectTo = new URL("/admin/accept-invite", siteUrl).toString();
+    } catch {
+      return fail("NEXT_PUBLIC_SITE_URL must be a valid absolute URL before sending invitations.");
+    }
+
+    const service = createAdminClient();
+    if (!service) {
+      return fail("Set SUPABASE_SERVICE_ROLE_KEY on the server to send admin invitations.");
+    }
+
+    let invitedUser;
+    let invitationPending = true;
+    let page = 1;
+    do {
+      const { data, error } = await service.auth.admin.listUsers({ page, perPage: 1000 });
+      if (error) return fail(`Could not check existing accounts: ${error.message}`);
+      invitedUser = data.users.find((user) => user.email?.toLowerCase() === email);
+      if (invitedUser || data.users.length < 1000) break;
+      page += 1;
+    } while (true);
+
+    if (invitedUser?.id === actor.id) return fail("You cannot change your own admin role.");
+    const { data: currentRole, error: currentRoleError } = invitedUser
+      ? await supabase
+          .from("admin_users")
+          .select("role")
+          .eq("id", invitedUser.id)
+          .maybeSingle()
+      : { data: null, error: null };
+    if (currentRoleError) return fail(currentRoleError.message);
+    if (
+      currentRole?.role === "super_admin" &&
+      parsedRole.data.role === "editor"
+    ) {
+      const { count, error } = await supabase
+        .from("admin_users")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "super_admin");
+      if (error) return fail(error.message);
+      if ((count ?? 0) <= 1) return fail("The last Super Admin cannot be demoted.");
+    }
+
+    if (invitedUser?.email_confirmed_at) {
+      invitationPending = false;
+    } else if (invitedUser) {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: redirectTo },
+      });
+      if (error) return fail(`Could not resend the account setup email: ${error.message}`);
+    } else {
+      const { data, error } = await service.auth.admin.inviteUserByEmail(email, { redirectTo });
+      if (error) return fail(`Could not send the account invitation: ${error.message}`);
+      invitedUser = data.user;
+    }
+
+    if (!invitedUser) return fail("Invitation did not return an account. Please try again.");
+
+    const { error: saveAdminError } = await service.from("admin_users").upsert(
+      {
+        id: invitedUser.id,
+        email,
+        role: parsedRole.data.role,
+        invitation_pending: invitationPending,
+      },
+      { onConflict: "id" },
+    );
+    if (saveAdminError) {
+      return fail(`The invitation was sent, but the admin role could not be saved: ${saveAdminError.message}`);
+    }
+
+    const { error: clearAppointmentError } = await service
+      .from("applications")
+      .update({ appointed_role: null })
+      .eq("id", application.id);
+    if (clearAppointmentError) {
+      console.error("appointMemberAsAdmin clear appointment", clearAppointmentError.message);
+      return fail(
+        `Role saved and invitation sent, but the application appointment could not be cleared: ${clearAppointmentError.message}`,
+      );
+    }
+
     revalidateAll(["/admin/admin-users"]);
-    return { ok: true, data: { pending: data } };
+    return {
+      ok: true,
+      data: { id: invitedUser.id, email, invitationPending },
+    };
+  });
+}
+
+export async function completeAdminInvite(): Promise<ActionResult> {
+  return guarded(async () => {
+    const admin = await requireAdmin();
+    if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
+    const supabase = await createClient();
+    if (!supabase) return fail("Database unavailable");
+    const { data, error } = await supabase
+      .from("admin_users")
+      .select("invitation_pending")
+      .eq("id", admin.id)
+      .maybeSingle();
+    if (error) return fail(error.message);
+    if (!data) return fail("Admin account not found.");
+    if (!data.invitation_pending) return { ok: true, data: undefined };
+
+    const service = createAdminClient();
+    if (!service) return fail("Admin invitation service is unavailable.");
+    const { error: updateError } = await service
+      .from("admin_users")
+      .update({ invitation_pending: false })
+      .eq("id", admin.id);
+    if (updateError) return fail(updateError.message);
+    revalidateAll(["/admin/admin-users"]);
+    return { ok: true, data: undefined };
   });
 }
 

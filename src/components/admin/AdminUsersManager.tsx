@@ -54,26 +54,32 @@ export function AdminUsersManager({
       return;
     }
 
-    if (!result.data.pending && selected.user_id) {
-      const updatedAdmin = {
-        id: selected.user_id,
-        email: selected.account,
-        role,
-      };
-      setRows((prev) => [
-        ...prev.filter((admin) => admin.id !== updatedAdmin.id),
-        updatedAdmin,
-      ]);
-    }
+    const updatedAdmin = {
+      id: result.data.id,
+      email: result.data.email,
+      role,
+      invitation_pending: result.data.invitationPending,
+    };
+    setRows((prev) => [
+      ...prev.filter((admin) => admin.id !== updatedAdmin.id),
+      updatedAdmin,
+    ]);
     setMembers((prev) =>
       prev.map((member) =>
-        member.member_id === selected.member_id ? { ...member, role } : member,
+        member.member_id === selected.member_id
+          ? {
+              ...member,
+              role,
+              user_id: result.data.id,
+              invitation_pending: result.data.invitationPending,
+            }
+          : member,
       ),
     );
     push(
-      result.data.pending
-        ? `${selected.name} appointed. This role is recorded for the future member login system.`
-        : `${selected.name} appointed as ${role === "super_admin" ? "Super Admin" : "Editor"}.`,
+      result.data.invitationPending
+        ? `Invitation sent to ${result.data.email}. They can set a password from the email to access the Admin panel.`
+        : `${selected.name} already has an account. Their role is now ${role === "super_admin" ? "Super Admin" : "Editor"}.`,
       "success",
     );
     setSelected(null);
@@ -122,9 +128,8 @@ export function AdminUsersManager({
       <section className="card-surface p-5 sm:p-6">
         <h2 className="font-display text-lg">Appoint a KSC member</h2>
         <p className="mt-1 text-sm text-muted">
-          Search accepted applicants by name or class. Appointments are recorded using their
-          application contact; manually added members are not eligible. Login access will be
-          connected when the member account system is added.
+          Search accepted applicants by name or class, choose a role, and send an account setup
+          invitation to the email on their application. Manually added members are not eligible.
         </p>
         <div className="relative mt-5 max-w-xl">
           <Search
@@ -194,7 +199,7 @@ export function AdminUsersManager({
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-ink">{selected.name}</p>
               <p className="text-xs text-faint">
-                {selected.class || "Class not set"} · Application contact: {selected.account}
+                {selected.class || "Class not set"} · Invitation email: {selected.account}
               </p>
             </div>
             <div className="sm:w-48">
@@ -214,13 +219,23 @@ export function AdminUsersManager({
             <button
               type="button"
               className="btn-primary"
-              disabled={appointing || selected.user_id === currentId}
+              disabled={
+                appointing ||
+                selected.user_id === currentId ||
+                !selected.account.includes("@")
+              }
               onClick={appoint}
             >
               <UserRoundPlus className="h-4 w-4" aria-hidden="true" />
-              {appointing ? "Appointing…" : "Appoint"}
+              {appointing ? "Sending invitation…" : "Appoint & send invitation"}
             </button>
           </div>
+        )}
+        {selected && !selected.account.includes("@") && (
+          <p className="mt-3 text-sm text-amber">
+            This application has a phone number, not an email. An email address is required to
+            send the account setup invitation.
+          </p>
         )}
       </section>
 
@@ -246,7 +261,11 @@ export function AdminUsersManager({
                   </div>
                   <span className="text-sm text-teal">
                     {member.role === "super_admin" ? "Super Admin" : "Editor"}
-                    {member.user_id ? "" : " · Appointment recorded"}
+                    {member.invitation_pending
+                      ? " · Invitation pending"
+                      : member.user_id
+                        ? ""
+                        : " · Appointment recorded"}
                   </span>
                 </li>
               ))}
@@ -270,6 +289,7 @@ export function AdminUsersManager({
                 <p className="text-xs text-faint">
                   {admin.role === "super_admin" ? "Super Admin" : "Editor"}
                   {admin.id === currentId ? " · you" : ""}
+                  {admin.invitation_pending ? " · Invitation pending" : ""}
                 </p>
               </div>
               <div className="flex items-center gap-2">

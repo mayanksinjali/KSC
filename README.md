@@ -48,7 +48,12 @@ In the Supabase SQL editor, run the migrations in order:
 5. `supabase/migrations/0005_api_grants.sql` — grant the least-privilege Data API permissions used by the app
 6. `supabase/migrations/0006_journey_milestones.sql` — enable admin-managed historical Journey milestones
 7. `supabase/migrations/0007_member_approval_and_admin_appointments.sql` — accept applications as members and link applicant accounts to appointments
-8. `supabase/migrations/0008_pending_member_admin_appointments.sql` — allow accepted applicants to be appointed before account creation and activate access after contact verification
+8. `supabase/migrations/0008_pending_member_admin_appointments.sql` — record appointments for accepted applicants before account creation
+9. `supabase/migrations/0009_admin_invitation_status.sql` — track setup invitations and clear the pending status after email verification
+
+For admin invitations, configure Supabase Auth → URL Configuration to allow
+`https://<your-domain>/admin/accept-invite` as a redirect URL. Set `NEXT_PUBLIC_SITE_URL` to that
+same deployed origin and configure email delivery in Supabase Auth.
 
 For a production project, keep **Automatically expose new tables** disabled. This migration grants the
 existing app tables the required API permissions explicitly; RLS still restricts access.

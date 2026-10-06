@@ -112,6 +112,11 @@ export const adminRoleSchema = z.object({
   role: z.enum(ADMIN_ROLES),
 });
 
+export const adminInviteEmailSchema = z
+  .string()
+  .trim()
+  .email("An email address is required to send an account invitation.");
+
 export const applicationStatusSchema = z.object({
   status: z.enum(APPLICATION_STATUSES),
 });
