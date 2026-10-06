@@ -4,10 +4,8 @@ import { getAdminContext } from "@/lib/auth";
 import { getSettings } from "@/lib/data";
 
 export default async function AdminPanelLayout({ children }: { children: React.ReactNode }) {
-  const admin = await getAdminContext();
+  const [admin, settings] = await Promise.all([getAdminContext(), getSettings()]);
   if (!admin) redirect("/admin/login");
-
-  const settings = await getSettings();
 
   return (
     <AdminShell

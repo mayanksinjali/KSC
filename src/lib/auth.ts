@@ -25,14 +25,17 @@ export const getAdminContext = cache(async (): Promise<AdminContext | null> => {
   if (!supabase) return null;
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+    data: { session },
+  } = await supabase.auth.getSession();
+  const userId = session?.user.id;
+  if (!userId) return null;
 
+  // Middleware verifies and refreshes the session. This RLS-protected row lookup
+  // confirms admin access without making a second request to the Auth service.
   const { data, error } = await supabase
     .from("admin_users")
     .select("id,email,role")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
 
   if (error) {
