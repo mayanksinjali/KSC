@@ -57,7 +57,11 @@ export function MembersManager({ members, openNew = false }: { members: Member[]
     return rows.filter((m) => {
       if (typeFilter !== "all" && m.type !== typeFilter) return false;
       if (!term) return true;
-      return m.name.toLowerCase().includes(term) || m.role.toLowerCase().includes(term);
+      return (
+        m.name.toLowerCase().includes(term) ||
+        m.role.toLowerCase().includes(term) ||
+        (m.class ?? "").toLowerCase().includes(term)
+      );
     });
   }, [rows, query, typeFilter]);
 
@@ -303,8 +307,25 @@ export function MembersManager({ members, openNew = false }: { members: Member[]
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-ink">{member.name}</p>
-                <p className="truncate text-xs text-faint">{member.class || "Class not set"}</p>
+                <p className="truncate text-xs text-teal">
+                  {member.role} · {member.type === "student" ? "Student" : "Teacher / Advisor"}
+                </p>
+                <p className="truncate text-xs text-faint">
+                  {[
+                    member.class || "Class not set",
+                    member.session ? `Session ${member.session}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
               </div>
+              <span
+                className={`hidden shrink-0 rounded-full border px-2.5 py-0.5 text-xs sm:inline-block ${
+                  member.active ? "border-forest/30 text-forest" : "border-line text-faint"
+                }`}
+              >
+                {member.active ? "Active" : "Inactive"}
+              </span>
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"

@@ -42,9 +42,17 @@ function MemberCard({ member }: { member: Member }) {
       </div>
       <h3 className="mt-4 font-display text-lg leading-snug">{member.name}</h3>
       <p className="mt-1 text-sm text-teal">{member.role}</p>
+      <p className="mt-1 text-xs text-muted">
+        {member.type === "student" ? "Student member" : "Teacher / Advisor"}
+      </p>
       {(member.class || member.session) && (
         <p className="mt-1 text-xs uppercase tracking-[0.14em] text-faint">
-          {[member.class, member.session].filter(Boolean).join(" · ")}
+          {[
+            member.class,
+            member.session ? `Session ${member.session}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
       )}
     </article>
