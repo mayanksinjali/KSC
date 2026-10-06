@@ -32,7 +32,7 @@ export default async function AdminUsersPage() {
     <>
       <PageTitle
         title="Admin Users"
-        description="Appoint accepted KSC members with an existing account as Editor or Super Admin."
+        description="Appoint accepted applicants as Editors or Super Admins. Manually added members are not eligible."
         breadcrumb={[{ href: "/admin/admin-users", label: "Admin Users" }]}
       />
       <AdminUsersManager

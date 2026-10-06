@@ -382,19 +382,22 @@ export async function saveAdminUser(id: string, input: unknown): Promise<ActionR
 export async function appointMemberAsAdmin(
   memberId: string,
   role: AdminRole,
-): Promise<ActionResult> {
+): Promise<ActionResult<{ pending: boolean }>> {
   return guarded(async () => {
     await requireSuperAdmin();
     if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
     const supabase = await createClient();
     if (!supabase) return fail("Database unavailable");
-    const { error } = await supabase.rpc("appoint_member_as_admin", {
+    const { data, error } = await supabase.rpc("appoint_member_as_admin", {
       p_member_id: memberId,
       p_role: role,
     });
     if (error) return fail(error.message);
+    if (typeof data !== "boolean") {
+      return fail("The appointment could not be verified. Refresh and try again.");
+    }
     revalidateAll(["/admin/admin-users"]);
-    return { ok: true, data: undefined };
+    return { ok: true, data: { pending: data } };
   });
 }
 

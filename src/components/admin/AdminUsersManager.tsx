@@ -54,21 +54,28 @@ export function AdminUsersManager({
       return;
     }
 
-    const updatedAdmin = {
-      id: selected.user_id,
-      email: selected.account,
-      role,
-    };
-    setRows((prev) => [
-      ...prev.filter((admin) => admin.id !== updatedAdmin.id),
-      updatedAdmin,
-    ]);
+    if (!result.data.pending && selected.user_id) {
+      const updatedAdmin = {
+        id: selected.user_id,
+        email: selected.account,
+        role,
+      };
+      setRows((prev) => [
+        ...prev.filter((admin) => admin.id !== updatedAdmin.id),
+        updatedAdmin,
+      ]);
+    }
     setMembers((prev) =>
       prev.map((member) =>
         member.member_id === selected.member_id ? { ...member, role } : member,
       ),
     );
-    push(`${selected.name} appointed as ${role === "super_admin" ? "Super Admin" : "Editor"}.`, "success");
+    push(
+      result.data.pending
+        ? `${selected.name} appointed. This role is recorded for the future member login system.`
+        : `${selected.name} appointed as ${role === "super_admin" ? "Super Admin" : "Editor"}.`,
+      "success",
+    );
     setSelected(null);
     setQuery("");
   }
@@ -115,8 +122,9 @@ export function AdminUsersManager({
       <section className="card-surface p-5 sm:p-6">
         <h2 className="font-display text-lg">Appoint a KSC member</h2>
         <p className="mt-1 text-sm text-muted">
-          Search accepted members who already have a confirmed account using the email or phone
-          number on their application. Manually added members are not eligible.
+          Search accepted applicants by name or class. Appointments are recorded using their
+          application contact; manually added members are not eligible. Login access will be
+          connected when the member account system is added.
         </p>
         <div className="relative mt-5 max-w-xl">
           <Search
@@ -163,7 +171,9 @@ export function AdminUsersManager({
                     </span>
                     <span className="shrink-0 text-xs text-teal">
                       {member.role
-                        ? `Current: ${member.role === "super_admin" ? "Super Admin" : "Editor"}`
+                        ? `${member.user_id ? "Current" : "Appointed"}: ${
+                            member.role === "super_admin" ? "Super Admin" : "Editor"
+                          }`
                         : "Eligible"}
                     </span>
                   </button>
@@ -174,8 +184,8 @@ export function AdminUsersManager({
         </div>
         {query.trim() && matches.length === 0 && !selected && (
           <p className="mt-2 text-sm text-faint">
-            No eligible members match. Only accepted members linked to a confirmed account appear
-            here.
+            No accepted applicants match. Manually added members are not eligible for admin
+            appointments.
           </p>
         )}
 
@@ -184,7 +194,7 @@ export function AdminUsersManager({
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-ink">{selected.name}</p>
               <p className="text-xs text-faint">
-                {selected.class || "Class not set"} · {selected.account}
+                {selected.class || "Class not set"} · Application contact: {selected.account}
               </p>
             </div>
             <div className="sm:w-48">
@@ -213,6 +223,36 @@ export function AdminUsersManager({
           </div>
         )}
       </section>
+
+      {members.some((member) => member.role) && (
+        <section className="card-surface overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-line px-5 py-4">
+            <UserRoundPlus className="h-4 w-4 text-teal" aria-hidden="true" />
+            <h2 className="font-display text-lg">Appointed KSC members</h2>
+          </div>
+          <ul className="divide-y divide-line">
+            {members
+              .filter((member) => member.role)
+              .map((member) => (
+                <li
+                  key={member.member_id}
+                  className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-ink">{member.name}</p>
+                    <p className="truncate text-xs text-faint">
+                      {member.class || "Class not set"} · {member.account}
+                    </p>
+                  </div>
+                  <span className="text-sm text-teal">
+                    {member.role === "super_admin" ? "Super Admin" : "Editor"}
+                    {member.user_id ? "" : " · Appointment recorded"}
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
 
       <section className="card-surface overflow-hidden">
         <div className="flex items-center gap-2 border-b border-line px-5 py-4">

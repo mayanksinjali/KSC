@@ -99,7 +99,7 @@ export interface AppointableMember {
   name: string;
   class: string | null;
   account: string;
-  user_id: string;
+  user_id: string | null;
   role: AdminRole | null;
 }
 

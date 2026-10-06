@@ -39,7 +39,7 @@ Requires Node 20+ (Node 22+ recommended — the seed script uses native TypeScri
 
 ## 3. Run migrations
 
-In the Supabase SQL editor, run the two migrations in order:
+In the Supabase SQL editor, run the migrations in order:
 
 1. `supabase/migrations/0001_schema.sql` — tables, enums, constraints, indexes, helper functions
 2. `supabase/migrations/0002_rls.sql` — Row Level Security policies **and** storage buckets
@@ -47,6 +47,8 @@ In the Supabase SQL editor, run the two migrations in order:
 4. `supabase/migrations/0004_admin_user_read_scope.sql` — restrict editor access to admin accounts
 5. `supabase/migrations/0005_api_grants.sql` — grant the least-privilege Data API permissions used by the app
 6. `supabase/migrations/0006_journey_milestones.sql` — enable admin-managed historical Journey milestones
+7. `supabase/migrations/0007_member_approval_and_admin_appointments.sql` — accept applications as members and link applicant accounts to appointments
+8. `supabase/migrations/0008_pending_member_admin_appointments.sql` — allow accepted applicants to be appointed before account creation and activate access after contact verification
 
 For a production project, keep **Automatically expose new tables** disabled. This migration grants the
 existing app tables the required API permissions explicitly; RLS still restricts access.
