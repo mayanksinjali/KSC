@@ -108,8 +108,7 @@ export const gallerySchema = z.object({
 
 export const settingsSchema = z.record(z.string(), z.string().max(4000));
 
-export const adminUserSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address"),
+export const adminRoleSchema = z.object({
   role: z.enum(ADMIN_ROLES),
 });
 

@@ -84,6 +84,7 @@ export interface Application {
   contact: string;
   message: string;
   status: ApplicationStatus;
+  accepted_member_id?: string | null;
   created_at: string;
 }
 
@@ -91,6 +92,15 @@ export interface AdminUser {
   id: string;
   email: string;
   role: AdminRole;
+}
+
+export interface AppointableMember {
+  member_id: string;
+  name: string;
+  class: string | null;
+  account: string;
+  user_id: string;
+  role: AdminRole | null;
 }
 
 export type SettingsMap = Record<string, string>;

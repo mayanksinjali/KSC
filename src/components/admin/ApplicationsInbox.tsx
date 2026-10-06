@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckCheck, Download, Inbox, Search, Trash2, Undo2 } from "lucide-react";
+import { CheckCheck, Download, Inbox, Search, Trash2, Undo2, UserRoundPlus } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useToast } from "@/components/admin/Toast";
-import { deleteApplication, setApplicationStatus } from "@/app/admin/actions";
+import { acceptApplication, deleteApplication, setApplicationStatus } from "@/app/admin/actions";
 import { formatDate } from "@/lib/utils";
 import type { Application } from "@/lib/types";
 
@@ -15,6 +15,7 @@ export function ApplicationsInbox({ applications }: { applications: Application[
   const [filter, setFilter] = useState<"all" | "new" | "reviewed">("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Application | null>(null);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -32,6 +33,7 @@ export function ApplicationsInbox({ applications }: { applications: Application[
   }, [rows, query, filter]);
 
   async function toggleStatus(app: Application) {
+    if (app.accepted_member_id) return;
     const next = app.status === "new" ? "reviewed" : "new";
     const result = await setApplicationStatus(app.id, next);
     if (!result.ok) {
@@ -41,6 +43,25 @@ export function ApplicationsInbox({ applications }: { applications: Application[
     setRows((prev) => prev.map((a) => (a.id === app.id ? { ...a, status: next } : a)));
     if (selected?.id === app.id) setSelected({ ...app, status: next });
     push(next === "reviewed" ? "Marked as reviewed." : "Moved back to new.", "success");
+  }
+
+  async function acceptAsMember(app: Application) {
+    if (app.accepted_member_id || acceptingId) return;
+    setAcceptingId(app.id);
+    const result = await acceptApplication(app.id);
+    setAcceptingId(null);
+    if (!result.ok) {
+      push(result.error, "error");
+      return;
+    }
+    const updated = {
+      ...app,
+      status: "reviewed" as const,
+      accepted_member_id: result.data.memberId,
+    };
+    setRows((prev) => prev.map((row) => (row.id === app.id ? updated : row)));
+    setSelected(updated);
+    push(`${app.name} accepted as a member.`, "success");
   }
 
   async function confirmDelete() {
@@ -128,12 +149,18 @@ export function ApplicationsInbox({ applications }: { applications: Application[
                     </div>
                     <span
                       className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs ${
-                        app.status === "new"
+                        app.accepted_member_id
+                          ? "border-teal/40 bg-teal/10 text-teal"
+                          : app.status === "new"
                           ? "border-amber/40 bg-amber/10 text-amber"
                           : "border-forest/30 text-forest"
                       }`}
                     >
-                      {app.status === "new" ? "New" : "Reviewed"}
+                      {app.accepted_member_id
+                        ? "Accepted"
+                        : app.status === "new"
+                          ? "New"
+                          : "Reviewed"}
                     </span>
                   </div>
                 </button>
@@ -166,19 +193,37 @@ export function ApplicationsInbox({ applications }: { applications: Application[
                   </div>
                 </dl>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <button type="button" className="btn-primary" onClick={() => toggleStatus(selected)}>
-                    {selected.status === "new" ? (
-                      <>
-                        <CheckCheck className="h-4 w-4" aria-hidden="true" />
-                        Mark reviewed
-                      </>
-                    ) : (
-                      <>
-                        <Undo2 className="h-4 w-4" aria-hidden="true" />
-                        Move to new
-                      </>
-                    )}
-                  </button>
+                  {selected.accepted_member_id ? (
+                    <a href="/admin/members" className="btn-primary">
+                      <CheckCheck className="h-4 w-4" aria-hidden="true" />
+                      Accepted · View members
+                    </a>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        disabled={acceptingId !== null}
+                        onClick={() => acceptAsMember(selected)}
+                      >
+                        <UserRoundPlus className="h-4 w-4" aria-hidden="true" />
+                        {acceptingId === selected.id ? "Accepting…" : "Accept as member"}
+                      </button>
+                      <button type="button" className="btn-ghost" onClick={() => toggleStatus(selected)}>
+                        {selected.status === "new" ? (
+                          <>
+                            <CheckCheck className="h-4 w-4" aria-hidden="true" />
+                            Mark reviewed
+                          </>
+                        ) : (
+                          <>
+                            <Undo2 className="h-4 w-4" aria-hidden="true" />
+                            Move to new
+                          </>
+                        )}
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     className="btn-ghost"

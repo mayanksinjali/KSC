@@ -3,7 +3,7 @@ import { PageTitle } from "@/components/admin/PageTitle";
 import { AdminUsersManager } from "@/components/admin/AdminUsersManager";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getAdminContext, isSuperAdmin } from "@/lib/auth";
-import { listAdminUsers } from "@/lib/data";
+import { listAdminUsers, listAppointableMembers } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -23,16 +23,23 @@ export default async function AdminUsersPage() {
     );
   }
 
-  const admins = await listAdminUsers();
+  const [admins, appointableMembers] = await Promise.all([
+    listAdminUsers(),
+    listAppointableMembers(),
+  ]);
 
   return (
     <>
       <PageTitle
         title="Admin Users"
-        description="Control who can access the CMS and what they are allowed to do."
+        description="Appoint accepted KSC members with an existing account as Editor or Super Admin."
         breadcrumb={[{ href: "/admin/admin-users", label: "Admin Users" }]}
       />
-      <AdminUsersManager admins={admins} currentId={admin?.id ?? ""} />
+      <AdminUsersManager
+        admins={admins}
+        appointableMembers={appointableMembers}
+        currentId={admin?.id ?? ""}
+      />
     </>
   );
 }

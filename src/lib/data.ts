@@ -11,6 +11,7 @@ import {
   seedSettings,
 } from "./seed";
 import type {
+  AppointableMember,
   AdminUser,
   Application,
   EventCategory,
@@ -353,6 +354,17 @@ export const listAdminUsers = cache(async (): Promise<AdminUser[]> => {
     return [];
   }
   return (data ?? []) as AdminUser[];
+});
+
+export const listAppointableMembers = cache(async (): Promise<AppointableMember[]> => {
+  const supabase = await db();
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("list_appointable_members");
+  if (error) {
+    console.error("listAppointableMembers", error.message);
+    return [];
+  }
+  return (data ?? []) as AppointableMember[];
 });
 
 export const getCurrentAdmin = cache(async (): Promise<

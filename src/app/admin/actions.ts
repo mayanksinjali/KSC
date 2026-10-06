@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getAdminContext, requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import {
-  adminUserSchema,
+  adminRoleSchema,
   applicationStatusSchema,
   eventSchema,
   gallerySchema,
@@ -14,7 +14,7 @@ import {
   noticeSchema,
   settingsSchema,
 } from "@/lib/validation";
-import type { ActionResult } from "@/lib/types";
+import type { ActionResult, AdminRole } from "@/lib/types";
 
 const PREVIEW_ERROR =
   "Preview mode: connect a Supabase project (.env.local) to save changes. Nothing was written.";
@@ -276,10 +276,35 @@ export async function setApplicationStatus(id: string, status: string): Promise<
     if (!parsed.success) return fail("Invalid status");
     const supabase = await createClient();
     if (!supabase) return fail("Database unavailable");
-    const { error } = await supabase.from("applications").update({ status }).eq("id", id);
+    const { data, error } = await supabase
+      .from("applications")
+      .update({ status })
+      .eq("id", id)
+      .is("accepted_member_id", null)
+      .select("id")
+      .maybeSingle();
     if (error) return fail(error.message);
+    if (!data) return fail("Application not found or already accepted as a member.");
     revalidateAll(["/admin/applications", "/admin/dashboard"]);
     return { ok: true, data: undefined };
+  });
+}
+
+export async function acceptApplication(
+  id: string,
+): Promise<ActionResult<{ memberId: string }>> {
+  return guarded(async () => {
+    await requireAdmin();
+    if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
+    const supabase = await createClient();
+    if (!supabase) return fail("Database unavailable");
+    const { data, error } = await supabase.rpc("accept_application", {
+      p_application_id: id,
+    });
+    if (error) return fail(error.message);
+    if (typeof data !== "string") return fail("The application was accepted but no member ID was returned.");
+    revalidateAll(["/admin/applications", "/admin/members", "/admin/dashboard", "/team", "/"]);
+    return { ok: true, data: { memberId: data } };
   });
 }
 
@@ -318,26 +343,15 @@ export async function saveSettings(input: unknown): Promise<ActionResult> {
 
 /* ------------------------------ admin users ----------------------------- */
 
-export async function saveAdminUser(id: string | null, input: unknown): Promise<ActionResult> {
+export async function saveAdminUser(id: string, input: unknown): Promise<ActionResult> {
   return guarded(async () => {
     const actor = await requireSuperAdmin();
     if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
-    const parsed = adminUserSchema.safeParse(input);
-    if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Invalid admin data");
+    const parsed = adminRoleSchema.safeParse(input);
+    if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Invalid admin role");
 
     const supabase = await createClient();
     if (!supabase) return fail("Database unavailable");
-
-    // Admin accounts are created through Supabase Auth (invite) and linked by id.
-    if (!id) {
-      const { error } = await supabase.auth.admin
-        ? await supabase.auth.admin.inviteUserByEmail(parsed.data.email)
-        : { error: { message: "Admin invites require the service role key on the server." } };
-      if (error) return fail(error.message);
-      revalidateAll(["/admin/admin-users"]);
-      return { ok: true, data: undefined };
-    }
-
     if (id === actor.id) return fail("You cannot change your own admin role.");
     const { data: target, error: targetError } = await supabase
       .from("admin_users")
@@ -359,6 +373,25 @@ export async function saveAdminUser(id: string | null, input: unknown): Promise<
       .from("admin_users")
       .update({ role: parsed.data.role })
       .eq("id", id);
+    if (error) return fail(error.message);
+    revalidateAll(["/admin/admin-users"]);
+    return { ok: true, data: undefined };
+  });
+}
+
+export async function appointMemberAsAdmin(
+  memberId: string,
+  role: AdminRole,
+): Promise<ActionResult> {
+  return guarded(async () => {
+    await requireSuperAdmin();
+    if (!isSupabaseConfigured) return fail(PREVIEW_ERROR);
+    const supabase = await createClient();
+    if (!supabase) return fail("Database unavailable");
+    const { error } = await supabase.rpc("appoint_member_as_admin", {
+      p_member_id: memberId,
+      p_role: role,
+    });
     if (error) return fail(error.message);
     revalidateAll(["/admin/admin-users"]);
     return { ok: true, data: undefined };

@@ -1,49 +1,82 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Search, ShieldCheck, Trash2, UserRoundPlus } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/admin/Toast";
-import { removeAdminUser, saveAdminUser } from "@/app/admin/actions";
-import type { AdminRole, AdminUser } from "@/lib/types";
+import {
+  appointMemberAsAdmin,
+  removeAdminUser,
+  saveAdminUser,
+} from "@/app/admin/actions";
+import type { AdminRole, AdminUser, AppointableMember } from "@/lib/types";
 
 export function AdminUsersManager({
   admins,
+  appointableMembers,
   currentId,
 }: {
   admins: AdminUser[];
+  appointableMembers: AppointableMember[];
   currentId: string;
 }) {
   const { push } = useToast();
   const [rows, setRows] = useState(admins);
-  const [email, setEmail] = useState("");
+  const [members, setMembers] = useState(appointableMembers);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<AppointableMember | null>(null);
   const [role, setRole] = useState<AdminRole>("editor");
-  const [saving, setSaving] = useState(false);
+  const [appointing, setAppointing] = useState(false);
   const [roleTarget, setRoleTarget] = useState<{ admin: AdminUser; role: AdminRole } | null>(null);
   const [changingRole, setChangingRole] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  async function invite(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    const result = await saveAdminUser(null, { email, role });
-    setSaving(false);
+  const matches = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term || selected) return [];
+    return members
+      .filter(
+        (member) =>
+          member.name.toLowerCase().includes(term) ||
+          (member.class ?? "").toLowerCase().includes(term),
+      )
+      .slice(0, 6);
+  }, [members, query, selected]);
+
+  async function appoint() {
+    if (!selected) return;
+    setAppointing(true);
+    const result = await appointMemberAsAdmin(selected.member_id, role);
+    setAppointing(false);
     if (!result.ok) {
       push(result.error, "error");
       return;
     }
-    push(`Invitation sent to ${email}.`, "success");
-    setEmail("");
+
+    const updatedAdmin = {
+      id: selected.user_id,
+      email: selected.account,
+      role,
+    };
+    setRows((prev) => [
+      ...prev.filter((admin) => admin.id !== updatedAdmin.id),
+      updatedAdmin,
+    ]);
+    setMembers((prev) =>
+      prev.map((member) =>
+        member.member_id === selected.member_id ? { ...member, role } : member,
+      ),
+    );
+    push(`${selected.name} appointed as ${role === "super_admin" ? "Super Admin" : "Editor"}.`, "success");
+    setSelected(null);
+    setQuery("");
   }
 
   async function confirmRoleChange() {
     if (!roleTarget) return;
     setChangingRole(true);
-    const result = await saveAdminUser(roleTarget.admin.id, {
-      email: roleTarget.admin.email,
-      role: roleTarget.role,
-    });
+    const result = await saveAdminUser(roleTarget.admin.id, { role: roleTarget.role });
     setChangingRole(false);
     if (!result.ok) {
       push(result.error, "error");
@@ -67,63 +100,131 @@ export function AdminUsersManager({
       push(result.error, "error");
       return;
     }
-    setRows((prev) => prev.filter((a) => a.id !== deleteTarget.id));
+    setRows((prev) => prev.filter((admin) => admin.id !== deleteTarget.id));
+    setMembers((prev) =>
+      prev.map((member) =>
+        member.user_id === deleteTarget.id ? { ...member, role: null } : member,
+      ),
+    );
     push("Admin removed.", "success");
     setDeleteTarget(null);
   }
 
   return (
     <div className="space-y-6">
-      <form onSubmit={invite} className="card-surface p-5 sm:p-6">
-        <h2 className="font-display text-lg">Invite an admin</h2>
+      <section className="card-surface p-5 sm:p-6">
+        <h2 className="font-display text-lg">Appoint a KSC member</h2>
         <p className="mt-1 text-sm text-muted">
-          The person receives an email invitation and sets their own password. Edits are enforced by
-          database policies, not just this screen.
+          Search accepted members who already have a confirmed account using the email or phone
+          number on their application. Manually added members are not eligible.
         </p>
-        <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
-          <div>
-            <label htmlFor="admin-email" className="label">
-              Email
-            </label>
-            <input
-              id="admin-email"
-              type="email"
-              required
-              className="field"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="committee@example.com"
-            />
-          </div>
-          <div>
-            <label htmlFor="admin-role" className="label">
-              Role
-            </label>
-            <select
-              id="admin-role"
-              className="field"
-              value={role}
-              onChange={(e) => setRole(e.target.value as AdminRole)}
+        <div className="relative mt-5 max-w-xl">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint"
+            aria-hidden="true"
+          />
+          <label htmlFor="member-appointment-search" className="sr-only">
+            Search eligible members by name or class
+          </label>
+          <input
+            id="member-appointment-search"
+            type="search"
+            className="field pl-9"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelected(null);
+            }}
+            placeholder="Type a member name…"
+            autoComplete="off"
+          />
+          {matches.length > 0 && (
+            <ul
+              aria-label="Eligible members"
+              className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-soft border border-line bg-surface shadow-lift"
             >
-              <option value="editor">Editor (student committee)</option>
-              <option value="super_admin">Super Admin (teacher)</option>
-            </select>
-          </div>
-          <button type="submit" className="btn-primary" disabled={saving}>
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            {saving ? "Inviting…" : "Invite"}
-          </button>
+              {matches.map((member) => (
+                <li key={member.member_id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelected(member);
+                      setRole(member.role ?? "editor");
+                    }}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-paper-2"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-ink">
+                        {member.name}
+                      </span>
+                      <span className="block truncate text-xs text-faint">
+                        {member.class || member.account}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs text-teal">
+                      {member.role
+                        ? `Current: ${member.role === "super_admin" ? "Super Admin" : "Editor"}`
+                        : "Eligible"}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      </form>
+        {query.trim() && matches.length === 0 && !selected && (
+          <p className="mt-2 text-sm text-faint">
+            No eligible members match. Only accepted members linked to a confirmed account appear
+            here.
+          </p>
+        )}
 
-      <div className="card-surface overflow-hidden">
+        {selected && (
+          <div className="mt-4 flex flex-col gap-4 rounded-soft border border-line bg-paper-2/50 p-4 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-ink">{selected.name}</p>
+              <p className="text-xs text-faint">
+                {selected.class || "Class not set"} · {selected.account}
+              </p>
+            </div>
+            <div className="sm:w-48">
+              <label htmlFor="member-admin-role" className="label">
+                Appoint as
+              </label>
+              <select
+                id="member-admin-role"
+                className="field"
+                value={role}
+                onChange={(event) => setRole(event.target.value as AdminRole)}
+              >
+                <option value="editor">Editor</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
+            </div>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={appointing || selected.user_id === currentId}
+              onClick={appoint}
+            >
+              <UserRoundPlus className="h-4 w-4" aria-hidden="true" />
+              {appointing ? "Appointing…" : "Appoint"}
+            </button>
+          </div>
+        )}
+      </section>
+
+      <section className="card-surface overflow-hidden">
         <div className="flex items-center gap-2 border-b border-line px-5 py-4">
           <ShieldCheck className="h-4 w-4 text-teal" aria-hidden="true" />
           <h2 className="font-display text-lg">Admin users</h2>
         </div>
         <ul className="divide-y divide-line">
           {rows.map((admin) => (
-            <li key={admin.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <li
+              key={admin.id}
+              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-ink">{admin.email}</p>
                 <p className="text-xs text-faint">
@@ -132,9 +233,6 @@ export function AdminUsersManager({
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted">
-                  {admin.role === "super_admin" ? "Super Admin" : "Editor"}
-                </span>
                 <button
                   type="button"
                   disabled={admin.id === currentId}
@@ -161,7 +259,7 @@ export function AdminUsersManager({
             </li>
           ))}
         </ul>
-      </div>
+      </section>
 
       <ConfirmDialog
         open={Boolean(roleTarget)}

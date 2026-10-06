@@ -7,7 +7,7 @@ import { AlertCircle, Loader2, LogIn } from "lucide-react";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,14 @@ export function LoginForm() {
         setError("No Supabase project is connected yet. See the setup steps below.");
         return;
       }
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      let credentials: { email: string; password: string } | { phone: string; password: string };
+      if (identifier.includes("@")) {
+        credentials = { email: identifier.trim(), password };
+      } else {
+        const phone = identifier.trim().replace(/[\s()-]/g, "");
+        credentials = { phone: /^\d{10}$/.test(phone) ? `+977${phone}` : phone, password };
+      }
+      const { error: signInError } = await supabase.auth.signInWithPassword(credentials);
       if (signInError) {
         setError("Those credentials didn't work. Please check your email and password.");
         return;
@@ -41,18 +48,18 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
-        <label htmlFor="email" className="label">
-          Email
+        <label htmlFor="account" className="label">
+          Email or phone number
         </label>
         <input
-          id="email"
-          type="email"
-          autoComplete="email"
+          id="account"
+          type="text"
+          autoComplete="username"
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
           className="field"
-          placeholder="you@kantiscienceclub.example"
+          placeholder="Email or phone number"
         />
       </div>
       <div>

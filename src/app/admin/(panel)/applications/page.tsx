@@ -11,7 +11,7 @@ export default async function AdminApplicationsPage() {
     <>
       <PageTitle
         title="Applications"
-        description="Membership applications submitted through the Join Us form. Only admins can read this data."
+        description="Review membership applications and accept a person into Members with one click. Only admins can read these applications."
         breadcrumb={[{ href: "/admin/applications", label: "Applications" }]}
       />
       <ApplicationsInbox applications={applications} />

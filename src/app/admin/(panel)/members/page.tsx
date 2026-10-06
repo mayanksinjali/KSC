@@ -15,7 +15,7 @@ export default async function AdminMembersPage({
     <>
       <PageTitle
         title="Members"
-        description="Manage the student committee and teacher advisors. Order controls how they appear on the public Team page."
+        description="Manage member names and classes. Add members manually or accept applicants from the Applications page."
         breadcrumb={[{ href: "/admin/members", label: "Members" }]}
       />
       <MembersManager members={members} openNew={isNew === "1"} />

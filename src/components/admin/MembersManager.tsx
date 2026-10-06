@@ -2,7 +2,17 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUp, GripVertical, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  GripVertical,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ImageUpload } from "@/components/admin/ImageUpload";
@@ -15,7 +25,6 @@ type FormState = {
   name: string;
   role: string;
   type: MemberType;
-  session: string;
   class: string;
   photo_url: string;
   active: boolean;
@@ -25,7 +34,6 @@ const emptyForm: FormState = {
   name: "",
   role: "",
   type: "student",
-  session: "",
   class: "",
   photo_url: "",
   active: true,
@@ -42,6 +50,7 @@ export function MembersManager({ members, openNew = false }: { members: Member[]
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -63,7 +72,6 @@ export function MembersManager({ members, openNew = false }: { members: Member[]
       name: member.name,
       role: member.role,
       type: member.type,
-      session: member.session ?? "",
       class: member.class ?? "",
       photo_url: member.photo_url ?? "",
       active: member.active,
@@ -74,7 +82,11 @@ export function MembersManager({ members, openNew = false }: { members: Member[]
     e.preventDefault();
     if (!form) return;
     setSaving(true);
-    const result = await saveMember(editing?.id ?? null, { ...form, sort_order: editing?.sort_order ?? rows.length });
+    const result = await saveMember(editing?.id ?? null, {
+      ...form,
+      session: editing?.session ?? "",
+      sort_order: editing?.sort_order ?? rows.length,
+    });
     setSaving(false);
     if (!result.ok) {
       push(result.error, "error");
@@ -214,18 +226,6 @@ export function MembersManager({ members, openNew = false }: { members: Member[]
               </select>
             </div>
             <div>
-              <label htmlFor="m-session" className="label">
-                Session
-              </label>
-              <input
-                id="m-session"
-                className="field"
-                value={form.session}
-                onChange={(e) => setForm({ ...form, session: e.target.value })}
-                placeholder="e.g. 2082/2083"
-              />
-            </div>
-            <div>
               <label htmlFor="m-class" className="label">
                 Class
               </label>
@@ -303,18 +303,8 @@ export function MembersManager({ members, openNew = false }: { members: Member[]
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-ink">{member.name}</p>
-                <p className="truncate text-xs text-faint">
-                  {member.role} · {member.type === "student" ? "Student" : "Teacher"}
-                  {member.session ? ` · ${member.session}` : ""}
-                </p>
+                <p className="truncate text-xs text-faint">{member.class || "Class not set"}</p>
               </div>
-              <span
-                className={`hidden shrink-0 rounded-full border px-2.5 py-0.5 text-xs sm:inline-block ${
-                  member.active ? "border-forest/30 text-forest" : "border-line text-faint"
-                }`}
-              >
-                {member.active ? "Active" : "Inactive"}
-              </span>
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
@@ -332,22 +322,51 @@ export function MembersManager({ members, openNew = false }: { members: Member[]
                 >
                   <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => openEdit(member)}
-                  aria-label={`Edit ${member.name}`}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-paper-2 hover:text-teal"
-                >
-                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleteTarget(member)}
-                  aria-label={`Delete ${member.name}`}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-danger/10 hover:text-danger"
-                >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenMenuId((current) => (current === member.id ? null : member.id))
+                    }
+                    aria-label={`Actions for ${member.name}`}
+                    aria-haspopup="menu"
+                    aria-expanded={openMenuId === member.id}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-paper-2 hover:text-ink"
+                  >
+                    <MoreVertical className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  {openMenuId === member.id && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 z-20 mt-1 min-w-36 rounded-soft border border-line bg-surface p-1 shadow-lift"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          openEdit(member);
+                        }}
+                        className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-ink hover:bg-paper-2"
+                      >
+                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          setDeleteTarget(member);
+                        }}
+                        className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-danger hover:bg-danger/10"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </li>
           ))}
